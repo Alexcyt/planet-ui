@@ -14,8 +14,6 @@ class MainHeader extends React.Component {
 
   componentDidMount() {
     console.log(`first mount account: ${this.props.account}`);
-    const { dispatch } = this.props;
-    dispatch({ type: 'user/getNetId' });
   }
 
   componentDidUpdate() {
@@ -24,14 +22,14 @@ class MainHeader extends React.Component {
   }
 
   render() {
-    const { tabIndex, web3, account, netId }= this.props;
+    const { tabIndex, hasMetaMask, account, netId }= this.props;
     const selectedKeys = [];
     if (tabIndex > 0) {
       selectedKeys.push(`${tabIndex}`);
     }
 
     let linkComp = (<Link to="#">登录</Link>);
-    if (!web3 || !web3.hasMetaMask || !account) {
+    if (!hasMetaMask || !account) {
       linkComp = (<Link to="/info">登录</Link>);
     } else if (netId !== '1') {
       linkComp = (<Link to="/info">登录</Link>);

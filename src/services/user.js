@@ -2,7 +2,7 @@ import Web3 from 'web3';
 import Promise from 'bluebird';
 
 const web3 = window.web3;
-let timerId = null;
+let timetId = null;
 let lastAccount = null;
 
 export function listen(action) {
@@ -10,24 +10,37 @@ export function listen(action) {
     if (typeof web3 !== 'undefined') {
       const web3js = new Web3(web3.currentProvider);
       window.web3Instance = web3js;
-      action({ type: 'has-metamask' });
-      timerId = setInterval(() => {
-        const currentAccount = web3.eth.accounts[0] || null;
-        if (lastAccount !== currentAccount) {
-          console.log('account change');
+      const account = web3.eth.accounts[0] || null;
+      lastAccount = account;
+      const getNetwork = Promise.promisify(web3.version.getNetwork);
+      getNetwork()
+        .then(netId => {
+
+          action({
+            type: 'init-ok',
+            payload: {
+              hasMetaMask: true,
+              account,
+              netId
+            }
+          });
+        })
+        .catch(err => {
+          console.log(err);
+        });
+
+      timetId = setInterval(() => {
+        const currentAccount = web3.eth.accounts[0];
+        if (currentAccount !== lastAccount) {
           lastAccount = currentAccount;
-          action({ type: 'update-account', currentAccount });
+          action({
+            type: 'change-account',
+            payload: {
+              account: currentAccount
+            }
+          });
         }
-      }, 1000);
+      }, 200);
     }
   });
-}
-
-export function *getNetworkId() {
-  if (typeof web3 !== 'undefined') {
-    const getNetwork = Promise.promisify(web3.version.getNetwork);
-    const netId = yield getNetwork();
-    return netId;
-  }
-  return null;
 }

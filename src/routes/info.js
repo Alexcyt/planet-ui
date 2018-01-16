@@ -5,8 +5,8 @@ import config from '../../config/development.json';
 const { metamaskUrl } = config;
 
 function Info({ ...props }) {
-  const { web3, account, netId } = props;
-  if (!web3 || !web3.hasMetaMask) {
+  const { hasMetaMask, account, netId } = props;
+  if (!hasMetaMask) {
     return (
       <div style={{ background: '#fff', padding: 24, minHeight: 380 }}>
         <h1>请使用chrome或firefox浏览器并安装MetaMask插件</h1>

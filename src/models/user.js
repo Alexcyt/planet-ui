@@ -3,44 +3,40 @@ import * as userServise from '../services/user';
 export default {
   namespace: 'user',
   state: {
-    web3: null,
+    hasMetaMask: false,
     netId: null,
     account: null
   },
 
   reducers: {
-    init(state) {
+    save(state, { payload: { hasMetaMask, netId, account } }) {
       return {
         ...state,
-        web3: { hasMetaMask: true }
+        hasMetaMask,
+        netId,
+        account
       };
     },
-
-    updateAccount(state, { currentAccount }) {
-      return { ...state, account: currentAccount };
-    },
-
-    updateNet(state, { netId }) {
-      return { ...state, netId };
+    updateAccount(state, { payload: { currentAccount } }) {
+      return {
+        ...state,
+        account: currentAccount
+      };
     }
   },
 
   effects: {
-    *getNetId(action, { call, put }) {
-      const netId = yield call(userServise.getNetworkId);
-      yield put({ type: 'updateNet', netId });
-    }
   },
 
   subscriptions: {
     setup({ dispatch }) {
-      return userServise.listen(data => {
-        switch (data.type) {
-          case 'has-metamask':
-            dispatch({ type: 'init' });
+      return userServise.listen(({ type, payload }) => {
+        switch (type) {
+          case 'init-ok':
+            dispatch({ type: 'save', payload });
             break;
-          case 'update-account':
-            dispatch({ type: 'updateAccount', currentAccount: data.currentAccount });
+          case 'change-account':
+            dispatch({ type: 'updateAccount', payload });
             break;
           default:
             console.log('error');
