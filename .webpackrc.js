@@ -1,4 +1,4 @@
-{
+export default {
   "entry": "src/index.js",
   "disableCSSModules": false,
   "publicPath": "/",
@@ -10,7 +10,11 @@
     "@line-height-base": "1.2"
   },
   "extraBabelPlugins": [
-    "transform-runtime",
     ["import", { "libraryName": "antd", "libraryDirectory": "es", "style": "css" }]
-  ]
+  ],
+  define: {
+    'process.env': {
+      'NODE_ENV': 'development'
+    }
+  }
 }

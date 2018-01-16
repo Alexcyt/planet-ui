@@ -1,0 +1,29 @@
+.header {
+  width: 100%;
+}
+
+.logo {
+  display: inline-block;
+  /*-webkit-box-align: center;*/
+  /*align-items: center;*/
+  float: left;
+  width: 140px;
+  height: 31px;
+}
+
+.logo_img {
+  width: 48px;
+  height: 36px;
+  vertical-align: middle;
+}
+
+.logo_name {
+  color: ghostwhite;
+  float: right;
+}
+
+.menu {
+  line-height: 64px;
+  float: right;
+  font-size: large;
+}

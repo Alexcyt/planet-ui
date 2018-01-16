@@ -9,9 +9,11 @@
   "dependencies": {
     "antd": "^3.1.1",
     "babel-plugin-import": "^1.6.3",
+    "bluebird": "^3.5.1",
     "dva": "^2.1.0",
     "react": "^16.2.0",
-    "react-dom": "^16.2.0"
+    "react-dom": "^16.2.0",
+    "web3": "^0.20.2"
   },
   "devDependencies": {
     "babel-plugin-dva-hmr": "^0.3.2",
