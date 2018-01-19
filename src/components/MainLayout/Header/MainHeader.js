@@ -1,38 +1,53 @@
 import React from 'react';
-import { Layout, Menu } from 'antd';
+import { Layout, Menu, notification } from 'antd';
 import { connect } from 'dva';
 import { Link } from 'dva/router';
 import styles from './MainHeader.css';
 import logo from '../../../assets/logo.png';
+import { ACCOUNT_STATUS } from '../../../../constants/common';
 
 const { Header } = Layout;
 
 class MainHeader extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-
-  componentDidMount() {
-    console.log(`first mount account: ${this.props.account}`);
-  }
-
-  componentDidUpdate() {
-    const { account, netId }= this.props;
-    console.log(`did update : ${account}; ${netId}`);
-  }
+  // constructor(props) {
+  //   super(props);
+  // }
+  //
+  // componentDidMount() {
+  //   console.log(`first mount account: ${this.props.account}`);
+  // }
+  //
+  // componentDidUpdate() {
+  //   const { account, netId }= this.props;
+  //   console.log(`did update : ${account}; ${netId}`);
+  // }
 
   render() {
-    const { tabIndex, hasMetaMask, account, netId }= this.props;
+    const { tabIndex, accountStatus }= this.props;
     const selectedKeys = [];
     if (tabIndex > 0) {
       selectedKeys.push(`${tabIndex}`);
     }
 
-    let linkComp = (<Link to="#">登录</Link>);
-    if (!hasMetaMask || !account) {
-      linkComp = (<Link to="/info">登录</Link>);
-    } else if (netId !== '1') {
-      linkComp = (<Link to="/info">登录</Link>);
+    let linkComp = null;
+    switch (accountStatus) {
+      case ACCOUNT_STATUS.NO_METAMASK:
+      case ACCOUNT_STATUS.WRONG_NET:
+      case ACCOUNT_STATUS.LOCKED_ACCOUNT:
+        linkComp = (<Link to="/info">登录</Link>);
+        break;
+      case ACCOUNT_STATUS.UN_REGISTER:
+        linkComp = (<Link to="/register">登录</Link>);
+        break;
+      case ACCOUNT_STATUS.HAS_LOGIN:
+        linkComp = (<Link to="/me">我的星星</Link>);
+        break;
+      default:
+        notification.error({
+          message: '页面渲染出错',
+          description: '未知的账号状态'
+        });
+        break;
     }
 
     return (
@@ -53,7 +68,7 @@ class MainHeader extends React.Component {
             {linkComp}
           </Menu.Item>
           <Menu.Item key="2">
-            <Link to="#">
+            <Link to="/market">
               星星市场
             </Link>
           </Menu.Item>
@@ -68,4 +83,6 @@ class MainHeader extends React.Component {
   }
 }
 
-export default connect(state => state.user)(MainHeader);
+export default connect(state => {
+  return { accountStatus: state.user.accountStatus };
+})(MainHeader);

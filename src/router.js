@@ -4,6 +4,10 @@ import MainLayout from './components/MainLayout';
 import IndexPage from './routes/IndexPage';
 import About from './routes/about';
 import Info from './routes/info';
+import Register from './routes/register/index';
+import Profile from './routes/profile/profile';
+import EditProfile from './routes/profile/edit-profile';
+import Market from './routes/market'
 
 const routes = [
   {
@@ -18,7 +22,28 @@ const routes = [
   },
   {
     path: '/info',
-    component: Info,
+    component: Info
+  },
+  {
+    path: '/register',
+    component: Register
+  },
+  {
+    path: '/me',
+    component: Profile,
+  },
+  {
+    path: '/profile',
+    component: Profile
+  },
+  {
+    path: '/edit-profile',
+    component: EditProfile
+  },
+  {
+    path: '/market',
+    component: Market,
+    tabIndex: 2
   }
 ];
 

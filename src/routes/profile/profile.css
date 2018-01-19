@@ -1,0 +1,16 @@
+.headImg {
+  width: 6rem;
+  height: 6rem;
+  -webkit-border-radius: 50%;
+  -moz-border-radius: 50%;
+  border-radius: 50%;
+}
+
+.userInfo {
+  vertical-align: middle;
+  text-align: center;
+}
+
+.userOperation {
+  font-size: 20px;
+}

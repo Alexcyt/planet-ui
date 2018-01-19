@@ -1,8 +1,19 @@
 import dva from 'dva';
+import { notification } from 'antd';
+import browserHistory from 'history/createBrowserHistory';
 import './index.css';
 
 // 1. Initialize
-const app = dva();
+const app = dva({
+  history: browserHistory(),
+  onError(e) {
+    if (!e.message) {
+      e.message = '出错啦！';
+    }
+    notification.error(e);
+    e.preventDefault();
+  }
+});
 
 // 2. Plugins
 // app.use({});

@@ -1,0 +1,5 @@
+{
+  "metamaskUrl": "https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn?hl=en",
+  "apiPrefix": "http://localhost:12345",
+  "ethereumNetId": "15"
+}
