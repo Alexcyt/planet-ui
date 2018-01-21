@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'dva';
 import { Link } from 'dva/router';
-import { Tooltip, Row, Col, Button, notification } from 'antd';
+import { Tooltip, Row, Col, Button, notification, Divider } from 'antd';
 import styles from './profile.css';
 import copyToClipboard from 'copy-to-clipboard';
 import { ACCOUNT_STATUS } from '../../../constants/common';
@@ -10,6 +10,7 @@ import RETCODE from '../../../constants/ret-code';
 import { errorProcess } from "../../utils/request";
 import shallowEqual from 'shallowequal';
 import queryString from 'querystring';
+import PlanetList from '../../components/PlanetList/index';
 
 const ButtonGroup = Button.Group;
 
@@ -138,6 +139,8 @@ class Profile extends React.PureComponent {
             </Col>
           </Row>
         </div>
+        <Divider><h2>{showProfile.nickName}的星星</h2></Divider>
+        <PlanetList walletAddr={showProfile.account} />
       </div>
     );
   }

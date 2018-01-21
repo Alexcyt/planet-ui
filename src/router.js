@@ -8,6 +8,7 @@ import Register from './routes/register/index';
 import Profile from './routes/profile/profile';
 import EditProfile from './routes/profile/edit-profile';
 import Market from './routes/market'
+import PlanetInfo from './routes/planet/info';
 
 const routes = [
   {
@@ -44,6 +45,10 @@ const routes = [
     path: '/market',
     component: Market,
     tabIndex: 2
+  },
+  {
+    path: '/planet',
+    component: PlanetInfo
   }
 ];
 
