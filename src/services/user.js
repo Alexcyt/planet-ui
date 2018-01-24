@@ -1,5 +1,5 @@
 import Web3 from 'web3';
-import Promise from 'bluebird';
+// import Promise from 'bluebird';
 import { request } from '../utils/request';
 import config from '../../config/default.json';
 import { ACCOUNT_STATUS } from '../../constants/common';
@@ -13,53 +13,29 @@ export function listen(action) {
   window.addEventListener('load', () => {
     if (typeof web3 !== 'undefined') {
       const web3js = new Web3(web3.currentProvider);
+      web3js.setProvider(web3.currentProvider);
       window.web3Instance = web3js;
-      const getNetwork = Promise.promisify(web3.version.getNetwork);
-
-      getNetwork()
-        .then(netId => {
-          const account = web3.eth.accounts[0] || null;
-          lastAccount = account;
-          if (netId !== config.ethereumNetId) {
-            action({
-              type: 'init-ok',
-              payload: { accountStatus: ACCOUNT_STATUS.WRONG_NET }
-            });
-          } else if (!account) {
-            action({
-              type: 'init-ok',
-              payload: {
-                accountStatus: ACCOUNT_STATUS.LOCKED_ACCOUNT,
-                netId
-              }
-            });
-          } else {
-            action({
-              type: 'init-ok',
-              payload: {
-                accountStatus: ACCOUNT_STATUS.UN_REGISTER,
-                account,
-                netId
-              }
-            });
-          }
-        })
-
+      init(web3js, action)
         .then(() => {
           timetId = setInterval(() => {
-            const currentAccount = web3.eth.accounts[0] || null;
-            if (currentAccount !== lastAccount) {
-              lastAccount = currentAccount;
-              action({
-                type: 'change-account',
-                payload: {
-                  account: currentAccount,
+            web3js.eth.getAccounts()
+              .then(accounts => {
+                let currentAccount = accounts[0] || null;
+                if (currentAccount) {
+                  currentAccount = currentAccount.toLowerCase();
+                }
+                if (currentAccount !== lastAccount) {
+                  lastAccount = currentAccount;
+                  action({
+                    type: 'change-account',
+                    payload: {
+                      account: currentAccount,
+                    }
+                  });
                 }
               });
-            }
           }, 200);
         })
-
         .catch(err => {
           console.log(err);
           action({ type: 'init-error' });
@@ -106,4 +82,42 @@ export function updateUserInfo(payload) {
 
 export function getUserInfo(walletAddr) {
   return request(`${apiPrefix}/users/${walletAddr}`);
+}
+
+
+async function init(web3, action) {
+  const netId = await web3.eth.net.getId();
+  if (netId !== config.ethereumNetId) {
+    action({
+      type: 'init-ok',
+      payload: { accountStatus: ACCOUNT_STATUS.WRONG_NET }
+    });
+    return;
+  }
+
+  const accounts = await web3.eth.getAccounts();
+  let account = accounts[0] || null;
+  if (account) {
+    account = account.toLowerCase();
+  }
+  lastAccount = account;
+  if (!account) {
+    action({
+      type: 'init-ok',
+      payload: {
+        accountStatus: ACCOUNT_STATUS.LOCKED_ACCOUNT,
+        netId
+      }
+    });
+    return;
+  }
+
+  action({
+    type: 'init-ok',
+    payload: {
+      accountStatus: ACCOUNT_STATUS.UN_REGISTER,
+      account,
+      netId
+    }
+  });
 }

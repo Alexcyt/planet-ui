@@ -1,7 +1,7 @@
-const { web3 } = window;
+const { web3Instance } = window;
 
 export default function getCurrentPrice(auction) {
-  if (!web3) {
+  if (!web3Instance) {
     return '';
   }
 
@@ -16,10 +16,10 @@ export default function getCurrentPrice(auction) {
   }
 
   if (secondsPassed >= duration) {
-    return web3.fromWei(auction.endPrice, 'ether');
+    return web3Instance.utils.fromWei(auction.endPrice, 'ether');
   }
 
   let price = (endPrice - startAt) / duration * secondsPassed + startPrice;
   price = Math.ceil(price / 1e10) * 1e10;
-  return web3.fromWei(price, 'ether');
+  return web3Instance.utils.fromWei(price, 'ether');
 }

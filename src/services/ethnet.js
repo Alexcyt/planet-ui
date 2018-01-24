@@ -3,8 +3,8 @@ import saleAuctionSource from '../../build/contracts/SaleClockAuction.json';
 import config from '../../config/default.json';
 import Promise from 'bluebird';
 
-let planetContract = null;
-let saleAuctionContract = null;
+// let planetContract = null;
+// let saleAuctionContract = null;
 let planetContractInstance = null;
 let saleAuctionContractInstance = null;
 
@@ -16,9 +16,8 @@ export function getPlanetContractInstance() {
     return null;
   }
 
-  if (!planetContract) {
-    planetContract = web3Instance.eth.contract(planetCoreSource.abi);
-    planetContractInstance = planetContract.at(config.contract.planetCoreAddr);
+  if (!planetContractInstance) {
+    planetContractInstance = new web3Instance.eth.Contract(planetCoreSource.abi, config.contract.planetCoreAddr);
   }
   return planetContractInstance;
 }
@@ -29,14 +28,13 @@ export function getSaleAuctionContractInstance() {
     return null;
   }
 
-  if (!saleAuctionContract) {
-    saleAuctionContract = web3Instance.eth.contract(saleAuctionSource.abi);
-    saleAuctionContractInstance = saleAuctionContract.at(config.contract.saleClockAuctionAddr);
+  if (!saleAuctionContractInstance) {
+    saleAuctionContractInstance = new web3Instance.eth.Contract(saleAuctionSource.abi, config.contract.saleClockAuctionAddr);
   }
   return saleAuctionContractInstance;
 }
 
-export function cancelAuction({ planetNo }) {
+export async function cancelAuction({ planetNo }) {
   const { web3Instance } = window;
   const saleInstance = getSaleAuctionContractInstance();
   if (!saleInstance) {
@@ -44,25 +42,11 @@ export function cancelAuction({ planetNo }) {
   }
 
   planetNo = Number.parseInt(planetNo, 10);
-  const account = web3Instance.eth.accounts[0];
-  saleInstance.AuctionCancelled().watch((err, result) => {
-    if (err) {
-      console.log(err);
-    } else {
-      console.log(result);
-    }
+  const accounts = await web3Instance.eth.getAccounts();
+  const account = accounts[0];
+  const resp = await saleInstance.methods.cancelAuction(planetNo).send({
+    from: account,
+    gas: gasLimit
   });
-  return new Promise((resolve, reject) => {
-    saleInstance.cancelAuction(planetNo, {
-      gas: gasLimit,
-      from: account,
-      to: config.contract.saleClockAuctionAddr
-    }, (err, result) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(result);
-      }
-    });
-  });
+  return resp;
 }

@@ -12,7 +12,7 @@ import ModalForm from '../../components/ModalForm/ModalForm';
 import PlanetNameForm from '../../components/ModalForm/PlanetNameForm';
 import PlanetIntroForm from '../../components/ModalForm/PlanetIntroForm';
 
-const { web3 } = window;
+const { web3Instance } = window;
 moment.locale('zh-cn');
 
 const isMine = (planet, user) => {
@@ -31,11 +31,11 @@ const getTimeLeft = (auction) => {
 };
 
 const getPrice = (price) => {
-  if (!web3) {
+  if (!web3Instance) {
     return '';
   }
   price = Math.ceil(price / 1e10) * 1e10;
-  return web3.fromWei(price, 'ether');
+  return web3Instance.utils.fromWei(price, 'ether');
 };
 
 const getRect = (auction) => {
