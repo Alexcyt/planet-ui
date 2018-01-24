@@ -81,11 +81,11 @@ class RegistrationForm extends React.Component {
             )}
           >
             {getFieldDecorator('email', {
-              rules: [{
-                type: 'email', message: '邮箱格式不合法！',
-              }, {
-                required: true, message: '请填写正确邮箱！',
-              }],
+              rules: [
+                { type: 'email', message: '邮箱格式不合法！' },
+                { required: true, message: '请填写正确邮箱！' },
+                { max: 50, message: '长度不要超过50个字符！' }
+              ],
             })(
               <Input />
             )}
@@ -102,7 +102,10 @@ class RegistrationForm extends React.Component {
             )}
           >
             {getFieldDecorator('nickname', {
-              rules: [{ required: true, message: '请填写您的昵称', whitespace: true }],
+              rules: [
+                { required: true, message: '请填写您的昵称', whitespace: true },
+                { max: 50, message: '长度不要超过50个字符！' }
+                ],
             })(
               <Input />
             )}

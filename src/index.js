@@ -7,10 +7,11 @@ import './index.css';
 const app = dva({
   history: browserHistory(),
   onError(e) {
-    if (!e.message) {
-      e.message = '出错啦！';
-    }
-    notification.error(e);
+    const showErr = {
+      message: e.message || '出错啦！',
+      description: e.description || '网络错误'
+    };
+    notification.error(showErr);
     e.preventDefault();
   }
 });

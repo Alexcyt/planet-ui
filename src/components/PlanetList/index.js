@@ -197,7 +197,7 @@ class PlanetList extends React.PureComponent {
                 avatar={<Avatar src={planet.owner.headImg} />}
                 title={
                   <Link to={`/planet?planetNo=${planet.planetNo}`} style={{ fontSize: '1.5rem' }}>
-                    星星{planet.planetNo}
+                    星星#{planet.planetNo}
                   </Link>
                 }
                 description={

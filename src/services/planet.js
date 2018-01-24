@@ -11,3 +11,13 @@ export function getPlanets(query) {
 export function getPlanet(planetNo) {
   return request(`${apiPrefix}/planets/${planetNo}`);
 }
+
+export function customPlanetInfo(payload) {
+  return request(`${apiPrefix}/planets`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}

@@ -293,7 +293,7 @@ contract ClockAuctionBase {
 
     function _currentPrice(Auction storage _auction) internal view returns (uint256) {
     	uint256 secondsPassed = 0;
-    	if (secondsPassed > _auction.startedAt) {
+    	if (now > _auction.startedAt) {
     		secondsPassed = now - _auction.startedAt;
     	}
 
@@ -591,14 +591,14 @@ contract PlanetMinting is PlanetAuction {
     }
 
     function discoverPlanetAndAuction(string _location) external onlyBoss {
-    	uint256 planetId = _discoverPlanet(address(this), _location);
+    	uint256 planetId = _discoverPlanet(bossAddress, _location); // uint256 planetId = _discoverPlanet(address(this), _location);
     	_approve(planetId, saleAuction);
     	saleAuction.createAuction(
     		planetId,
     		_computeNextPrice(),
     		0,
     		AUCTION_DURATION,
-    		address(this)
+            bossAddress // address(this)
     	);
     	++discoverCount;
     }

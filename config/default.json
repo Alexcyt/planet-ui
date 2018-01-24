@@ -1,5 +1,9 @@
 {
   "metamaskUrl": "https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn?hl=en",
   "apiPrefix": "http://localhost:12345",
-  "ethereumNetId": "15"
+  "ethereumNetId": "15",
+  "contract": {
+    "planetCoreAddr": "0x1a8be14b4ba649e7e8ad1407fe13ff96b8052027",
+    "saleClockAuctionAddr": "0x907545acdf523e00e3a157e40308fec5d40cd3ab"
+  }
 }

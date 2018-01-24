@@ -81,9 +81,10 @@ class EditProfileForm extends React.Component {
             )}
           >
             {getFieldDecorator('email', {
-              rules: [{
-                type: 'email', message: '邮箱格式不合法！',
-              }],
+              rules: [
+                { type: 'email', message: '邮箱格式不合法！' },
+                { max: 50, message: '长度不要超过50个字符！' }
+                ],
               initialValue: profile.email
             })(
               <Input/>
@@ -101,6 +102,9 @@ class EditProfileForm extends React.Component {
             )}
           >
             {getFieldDecorator('nickname', {
+              rules: [
+                { max: 50, message: '长度不要超过50个字符！' }
+              ],
               initialValue: profile.nickName
             })(
               <Input/>
