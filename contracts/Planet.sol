@@ -405,10 +405,11 @@ contract ClockAuction is Pausable, ClockAuctionBase {
         nonFungibleContract = candidateContract;
     }
 
+    // boss取钱
     function withdrawBalance() external {
         address nftAddress = address(nonFungibleContract);
         require(msg.sender == owner || msg.sender == nftAddress);
-        bool res = nftAddress.send(this.balance);
+        bool res = nftAddress.send(this.balance);   // Auction合约钱发送至PlanetCore合约
     }
 
     function createAuction(
@@ -423,7 +424,7 @@ contract ClockAuction is Pausable, ClockAuctionBase {
         require(_duration == uint256(uint64(_duration)));
         require(_owns(msg.sender, _tokenId));
 
-        _escrow(msg.sender, _tokenId);
+        _escrow(msg.sender, _tokenId);  // 属主临时变成SaleAuction合约
         Auction memory auction = Auction(
             _seller,
             uint128(_startingPrice),
@@ -439,6 +440,7 @@ contract ClockAuction is Pausable, ClockAuctionBase {
         _transfer(msg.sender, _tokenId);
     }
 
+    // 普通情况下的拍卖取消
     function cancelAuction(uint256 _tokenId) external {
         Auction storage auction = tokenIdToAuction[_tokenId];
         require(_isOnAuction(auction));
@@ -447,6 +449,7 @@ contract ClockAuction is Pausable, ClockAuctionBase {
         _cancelAuction(_tokenId, seller);
     }
 
+    // 特殊情况：boss停止合约后取消当前的拍卖
     function cancelAuctionWhenPaused(uint256 _tokenId) whenPaused onlyOwner external {
         Auction storage auction = tokenIdToAuction[_tokenId];
         require(_isOnAuction(auction));
@@ -488,10 +491,11 @@ contract ClockAuction is Pausable, ClockAuctionBase {
 contract SaleClockAuction is ClockAuction {
 	bool public isSaleClockAuction = true;
 	uint256 public saleCount = 0;
-	uint256[5] public lastSalePrices;
+	uint256[5] public lastSalePrices;  // 记录前5个boss发行的星星价格
 
 	function SaleClockAuction(address _nftAddress, uint256 _cut) public ClockAuction(_nftAddress, _cut) {}
 
+    // 开放给PlanetCore合约调用的拍卖（boss发行星星）创建方法
 	function createAuction(
 		uint256 _tokenId,
 		uint256 _startingPrice,
@@ -519,7 +523,7 @@ contract SaleClockAuction is ClockAuction {
 		address seller = tokenIdToAuction[_tokenId].seller;
 		uint256 price = _bid(_tokenId, msg.value);
 		_transfer(msg.sender, _tokenId);
-		if (seller == address(nonFungibleContract)) {
+		if (seller == owner) { // seller == address(nonFungibleContract)
 			lastSalePrices[saleCount % 5] = price;
 			++saleCount;
 		}
@@ -541,12 +545,13 @@ contract SaleClockAuction is ClockAuction {
  */
 
 contract PlanetAuction is PlanetOwnership {
-	function setSaleAuctionAddress(address _address) external onlyBoss {
+	function setSaleAuctionAddress(address _address) external onlyBoss {   // 设置saleAuction成员
 		SaleClockAuction candidateContract = SaleClockAuction(_address);
 		require(candidateContract.isSaleClockAuction());
 		saleAuction = candidateContract;
 	}
 
+    // 开放给普通用户调用的创建拍卖的方法
 	function createSaleAuction(
 		uint256 _planetId,
 		uint256 _startingPrice,
@@ -564,6 +569,7 @@ contract PlanetAuction is PlanetOwnership {
 		);
 	}
 
+    // boss从拍卖合约中提取获得的拍卖手续费，发送至PlanetCore合约
 	function withdrawAuctionBalance() external onlyBoss {
 		saleAuction.withdrawBalance();
 	}
@@ -576,7 +582,7 @@ contract PlanetAuction is PlanetOwnership {
  */
 
 contract PlanetMinting is PlanetAuction {
-	uint256 public constant STARTING_PRICE = 10 finney;
+	uint256 public constant STARTING_PRICE = 100 finney;
     uint256 public constant AUCTION_DURATION = 1 days;
     uint256 public discoverCount = 0;
 
@@ -596,7 +602,7 @@ contract PlanetMinting is PlanetAuction {
     	saleAuction.createAuction(
     		planetId,
     		_computeNextPrice(),
-    		0,
+    		STARTING_PRICE / 10,
     		AUCTION_DURATION,
             bossAddress // address(this)
     	);
@@ -640,6 +646,7 @@ contract PlanetCore is PlanetMinting {
         super.unpause();
     }
 
+    // boss从PlanetCore合约中取钱，发送至boss的地址
     function withdrawBalance() external onlyBoss {
     	bossAddress.send(this.balance);
     }

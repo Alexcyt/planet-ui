@@ -6,7 +6,7 @@ import { ACCOUNT_STATUS } from '../../constants/common';
 
 const { apiPrefix } = config;
 const { web3 } = window;
-let timetId = null;
+// let timetId = null;
 let lastAccount = null;
 
 export function listen(action) {
@@ -17,7 +17,7 @@ export function listen(action) {
       window.web3Instance = web3js;
       init(web3js, action)
         .then(() => {
-          timetId = setInterval(() => {
+          setInterval(() => {
             web3js.eth.getAccounts()
               .then(accounts => {
                 let currentAccount = accounts[0] || null;
@@ -83,7 +83,6 @@ export function updateUserInfo(payload) {
 export function getUserInfo(walletAddr) {
   return request(`${apiPrefix}/users/${walletAddr}`);
 }
-
 
 async function init(web3, action) {
   const netId = await web3.eth.net.getId();

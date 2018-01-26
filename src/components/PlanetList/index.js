@@ -1,11 +1,11 @@
 import React from 'react';
-import { Tabs, Input, Select, List, Avatar, Tooltip, Icon } from 'antd';
+import { Tabs, Input, Select, List, Avatar, Tooltip, Icon, Spin } from 'antd';
 import { connect } from 'dva';
 import { Link } from 'dva/router';
 import styles from './index.css';
 import shallowEqual from 'shallowequal';
 import moment from 'moment';
-import getCurrentPrice from '../../utils/price';
+import { getCurrentPrice } from '../../utils/price';
 import ethIcon from '../../assets/eth.png';
 
 moment.locale('zh-cn');
@@ -77,6 +77,19 @@ class PlanetList extends React.PureComponent {
     });
   }
 
+  componentWillReceiveProps(nextProps) {
+    const { walletAddr } = this.props;
+    const { query } = this.state;
+    if (nextProps.walletAddr !== walletAddr) {
+      this.setState({
+        query: {
+          ...query,
+          walletAddr: nextProps.walletAddr
+        }
+      });
+    }
+  }
+
   componentDidUpdate(prevProps, prevState) {
     const { dispatch } = this.props;
     const { query } = this.state;
@@ -121,26 +134,11 @@ class PlanetList extends React.PureComponent {
       stateComp = (
         <div>
           <strong>状态：</strong>
-          在售中&nbsp;<img src={ethIcon} style={{ height: '20px' }} />
+          在售中&nbsp;<img src={ethIcon} alt="" style={{ height: '20px' }} />
           {getCurrentPrice(planet.auction)} ETH
         </div>
       );
     }
-
-
-    // let introComp = null;
-    // if (planet.customIntro || planet.officialIntro) {
-    //   let intro = planet.customIntro || planet.officialIntro;
-    //   if (intro.length > 140) {
-    //     intro = `${intro.substring(0, 140)}...`;
-    //   }
-    //   introComp = (
-    //     <div>
-    //       <strong>简介：</strong>
-    //       {intro}
-    //     </div>
-    //   );
-    // }
 
     return (
       <div>
@@ -148,13 +146,12 @@ class PlanetList extends React.PureComponent {
         {timeComp}
         {ownerComp}
         {stateComp}
-        {/*{introComp}*/}
       </div>
     );
   };
 
   render() {
-    const { list, pagination } = this.props;
+    const { list, pagination, loading } = this.props;
 
     const operations = (
       <Select
@@ -167,41 +164,56 @@ class PlanetList extends React.PureComponent {
       </Select>
     );
 
-    let tabContents = (<h1>没有星星...</h1>);
-    if (list.length > 0 && pagination) {
-      const page = {
-        pageSize: pagination.pageSize,
-        current: pagination.page,
-        total: pagination.rowCount,
-        onChange: this.handleChangePage
-      };
+    let tabContents = [
+      <div align="center"><Spin size="large"/></div>,
+      <div align="center"><Spin size="large"/></div>
+    ];
 
-      tabContents = (
-        <List
-          grid={{ gutter: 48, column: 2 }}
-          className={styles.list}
-          itemLayout="vertical"
-          size="large"
-          pagination={page}
-          dataSource={list}
-          renderItem={planet => (
-            <List.Item
-              key={planet.planetNo}
-              extra={
-                <Link to={`/planet?planetNo=${planet.planetNo}`}>
-                  <img width={200} alt={`planet-${planet.planetNo}`} src={planet.img} />
-                </Link>
-                }
-            >
-              <List.Item.Meta
-                avatar={<Avatar src={planet.owner.headImg} />}
-                title={
-                  <Link to={`/planet?planetNo=${planet.planetNo}`} style={{ fontSize: '1.5rem' }}>
-                    星星#{planet.planetNo}
+    if (!loading) {
+      tabContents = [
+        (<h1>没有星星...</h1>),
+        (<h1>没有星星...</h1>)
+      ];
+      if (list.length > 0 && pagination) {
+        const page = {
+          pageSize: pagination.pageSize,
+          current: pagination.page,
+          total: pagination.rowCount,
+          onChange: this.handleChangePage
+        };
+
+        const { query } = this.state;
+        let tabIdx = 0;
+        if (query.forSale) {
+          tabIdx = 1;
+        }
+
+        tabContents[tabIdx] = (
+          <List
+            grid={{ gutter: 48, column: 2 }}
+            className={styles.list}
+            itemLayout="vertical"
+            size="large"
+            pagination={page}
+            dataSource={list}
+            renderItem={planet => (
+              <List.Item
+                key={planet.planetNo}
+                extra={
+                  <Link to={`/planet?planetNo=${planet.planetNo}`}>
+                    <img width={200} alt={`planet-${planet.planetNo}`} src={planet.img} />
                   </Link>
                 }
-                description={
-                  <span>
+              >
+                <List.Item.Meta
+                  avatar={<Avatar src={planet.owner.headImg} />}
+                  title={
+                    <Link to={`/planet?planetNo=${planet.planetNo}`} style={{ fontSize: '1.5rem' }}>
+                      星星#{planet.planetNo}
+                    </Link>
+                  }
+                  description={
+                    <span>
                     <h3 style={{ color: 'grey' }}>
                       位于：{planet.location}
                       &nbsp;
@@ -210,13 +222,14 @@ class PlanetList extends React.PureComponent {
                       </Tooltip>
                     </h3>
                   </span>
-                }
-              />
-              {this.getListItemContent(planet)}
-            </List.Item>
-          )}
-        />
-      );
+                  }
+                />
+                {this.getListItemContent(planet)}
+              </List.Item>
+            )}
+          />
+        );
+      }
     }
 
     return (
@@ -230,8 +243,8 @@ class PlanetList extends React.PureComponent {
           enterButton
         />
         <Tabs tabBarExtraContent={operations} onChange={this.handleTabChange}>
-          <TabPane tab="所有" key="all">{tabContents}</TabPane>
-          <TabPane tab="待售中" key="forSale">{tabContents}</TabPane>
+          <TabPane tab="所有" key="all">{tabContents[0]}</TabPane>
+          <TabPane tab="待售中" key="forSale">{tabContents[1]}</TabPane>
         </Tabs>
       </div>
     );
@@ -239,5 +252,9 @@ class PlanetList extends React.PureComponent {
 }
 
 export default connect(state => {
-  return { list: state.planet.list, pagination: state.planet.pagination };
+  return {
+    list: state.planet.list,
+    pagination: state.planet.pagination,
+    loading: state.loading.models.planet
+  };
 })(PlanetList);

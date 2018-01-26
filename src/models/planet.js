@@ -62,29 +62,89 @@ export default {
 
     *cancelAuction({ payload }, { call, put, select }) {
       try {
-        let resp = yield call(ethService.cancelAuction, payload);
-        console.log(resp);
-        resp = yield call(auctionService.cancelAuction, payload);
-        if (resp.retCode === RETCODE.SUCCESS) {
-          const planet = yield select(state => state.planet.planet);
-          yield put({
-            type: 'save',
-            payload: {
-              planet: {
-                ...planet,
-                auction: null
-              }
-            }
-          });
-          return;
-        }
-
-        throw errorProcess(resp);
+        yield call(ethService.cancelAuction, payload);
       } catch (err) {
         console.log(err);
         const errObj = { message: '网络错误', description: '以太坊网络操作失败' };
         throw errObj;
       }
+
+      const resp = yield call(auctionService.cancelAuction, payload);
+      if (resp.retCode === RETCODE.SUCCESS) {
+        const planet = yield select(state => state.planet.planet);
+        yield put({
+          type: 'save',
+          payload: {
+            planet: {
+              ...planet,
+              auction: null
+            }
+          }
+        });
+        return;
+      }
+
+      throw errorProcess(resp);
+    },
+
+    *buy({ payload }, { call, put, select }) {
+      try {
+        yield call(ethService.buy, payload);
+      } catch (err) {
+        console.log(err);
+        const errObj = { message: '网络错误', description: '以太坊网络操作失败' };
+        throw errObj;
+      }
+
+      const resp = yield call(auctionService.buy, payload);
+      if (resp.retCode === RETCODE.SUCCESS) {
+        const planet = yield select(state => state.planet.planet);
+        const { account, profile } = yield select(state => state.user);
+        yield put({
+          type: 'save',
+          payload: {
+            planet: {
+              ...planet,
+              auction: null,
+              owner: {
+                walletAddr: account,
+                nickName: profile.nickName,
+                headImg: profile.headImg
+              }
+            }
+          }
+        });
+        return;
+      }
+
+      throw errorProcess(resp);
+    },
+
+    *sale({ payload }, { call, put, select }) {
+      try {
+        yield call(ethService.sale, payload);
+      } catch (err) {
+        console.log(err);
+        const errObj = { message: '网络错误', description: '以太坊网络操作失败' };
+        throw errObj;
+      }
+
+      const resp = yield call(auctionService.sale, payload);
+      if (resp.retCode === RETCODE.SUCCESS) {
+        const planet = yield select(state => state.planet.planet);
+        yield put({
+          type: 'save',
+          payload: {
+            planet: {
+              ...planet,
+              auction: { ...resp.data },
+            }
+          }
+        });
+        return;
+      }
+
+      throw errorProcess(resp);
     }
-  }
+  },
 };

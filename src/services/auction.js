@@ -13,3 +13,28 @@ export function cancelAuction({ auctionId }) {
     body: JSON.stringify({ auctionId })
   });
 }
+
+export function buy({ auctionId }) {
+  return request(`${apiPrefix}/auctions/buy`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ auctionId })
+  });
+}
+
+export function sale({ planetId, startPrice, endPrice, duration }) {
+  return request(`${apiPrefix}/auctions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      planetId,
+      startPrice,
+      endPrice,
+      duration
+    })
+  });
+}

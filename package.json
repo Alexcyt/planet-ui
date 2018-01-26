@@ -12,6 +12,7 @@
     "bluebird": "^3.5.1",
     "copy-to-clipboard": "^3.0.8",
     "dva": "^2.1.0",
+    "dva-loading": "^1.0.4",
     "history": "^4.7.2",
     "moment": "^2.20.1",
     "react": "^16.2.0",

@@ -1,18 +1,18 @@
 import React from 'react';
 import { Link } from 'dva/router';
 import { connect } from 'dva';
-import { Row, Col, Tooltip, Button, Icon, Avatar, notification } from 'antd';
+import { Row, Col, Tooltip, Button, Icon, Avatar, notification, Spin } from 'antd';
 import queryString from 'querystring';
 import { ACCOUNT_STATUS } from "../../../constants/common";
 import styles from './info.css';
-import getCurrentPrice from '../../utils/price';
+import { getCurrentPrice, getPriceStr, getCurrentPriceIntStr, toWei } from '../../utils/price';
 import ethIcon from '../../assets/eth.png';
 import moment from 'moment';
 import ModalForm from '../../components/ModalForm/ModalForm';
 import PlanetNameForm from '../../components/ModalForm/PlanetNameForm';
 import PlanetIntroForm from '../../components/ModalForm/PlanetIntroForm';
+import SaleModalFrom from '../../components/ModalForm/SaleModalForm';
 
-const { web3Instance } = window;
 moment.locale('zh-cn');
 
 const isMine = (planet, user) => {
@@ -28,14 +28,6 @@ const getTimeLeft = (auction) => {
   }
   const endTime = moment(endAt);
   return moment(now).to(endTime);
-};
-
-const getPrice = (price) => {
-  if (!web3Instance) {
-    return '';
-  }
-  price = Math.ceil(price / 1e10) * 1e10;
-  return web3Instance.utils.fromWei(price, 'ether');
 };
 
 const getRect = (auction) => {
@@ -161,14 +153,20 @@ class PlanetInfo extends React.PureComponent {
     super(props);
     this.forms = {
       nameModal: null,
-      introModal: null
+      introModal: null,
+      saleModal: null
     };
     this.state = {
+      isOperationComplete: true,
       nameModal: {
         visible: false,
         confirmLoading: false
       },
       introModal: {
+        visible: false,
+        confirmLoading: false
+      },
+      saleModal: {
         visible: false,
         confirmLoading: false
       }
@@ -205,7 +203,7 @@ class PlanetInfo extends React.PureComponent {
     });
   };
 
-  handleCancle = (key) => {
+  handleCancel = (key) => {
     this.setState({
       ...this.state,
       [key]: {
@@ -214,58 +212,95 @@ class PlanetInfo extends React.PureComponent {
     });
   };
 
+  handleCustomInfo = (key, values) => {
+    const { dispatch, planet } = this.props;
+    let k = '_';
+    let v = null;
+    let prevV = null;
+    if (key === 'nameModal') {
+      k = 'customName';
+      v = values.customName.trim();
+      prevV = planet.customName;
+    } else if (key === 'introModal') {
+      k = 'customIntro';
+      v = values.customIntro.trim();
+      prevV = planet.customIntro;
+    }
+
+    if (!v || prevV === v) {
+      return Promise.resolve();
+    }
+
+    return dispatch({
+      type: 'planet/customPlanetInfo',
+      payload: {
+        planetId: planet.id,
+        [k]: v
+      }
+    });
+  };
+
+  handleSale = (key, values) => {
+    const { dispatch, planet, user } = this.props;
+
+    return dispatch({
+      type: 'planet/sale',
+      payload: {
+        planetId: planet.id,
+        planetNo: planet.planetNo,
+        sender: user.account,
+        startPrice: toWei(Number(values.startPrice)),
+        endPrice: toWei(Number(values.endPrice)),
+        duration: Number(values.duration) * 86400
+      }
+    });
+  };
+
   handleOk = (key) => {
     const form = this.forms[key];
     form.validateFields((err, values) => {
       if (!err) {
-        const { dispatch, planet } = this.props;
-        let k = '_';
-        let v = null;
-        let prevV = null;
-        if (key === 'nameModal') {
-          k = 'customName';
-          v = values.customName.trim();
-          prevV = planet.customName;
+        let pro = Promise.resolve();
+        const extraStateBefore = {};
+        if (key === 'saleModal') {
+          extraStateBefore.isOperationComplete = false;
+          pro = this.handleSale(key, values);
         } else {
-          k = 'customIntro';
-          v = values.customIntro.trim();
-          prevV = planet.customIntro;
-        }
-
-        if (!v || prevV === v) {
-          this.setState({
-            ...this.state,
-            [key]: {
-              visible: false,
-              confirmLoading: false
-            }
-          });
-          return;
+          pro = this.handleCustomInfo(key, values);
         }
 
         this.setState({
           ...this.state,
+          ...extraStateBefore,
           [key]: {
             confirmLoading: true
           }
         });
 
-        dispatch({
-          type: 'planet/customPlanetInfo',
-          payload: {
-            planetId: planet.id,
-            [k]: v
-          }
+        let description = '';
+        const extraStateAfter = {};
+        if (key === 'saleModal') {
+          description = '星星拍卖创建成功！';
+          extraStateAfter.isOperationComplete = true;
+        } else {
+          description = '星星信息修改成功！'
+        }
+
+        pro.then(() => {
+          notification.info({
+            message: '成功！',
+            description
+          });
+
+          this.setState({
+            ...this.state,
+            ...extraStateAfter,
+            [key]: {
+              visible: false,
+              confirmLoading: false
+            }
+          });
         })
-          .then(() => {
-            this.setState({
-              ...this.state,
-              [key]: {
-                visible: false,
-                confirmLoading: false
-              }
-            });
-          })
           .catch((e) => {
             if (!e.message) {
               e.message = '出错啦！';
@@ -274,6 +309,7 @@ class PlanetInfo extends React.PureComponent {
 
             this.setState({
               ...this.state,
+              ...extraStateAfter,
               [key]: {
                 visible: false,
                 confirmLoading: false
@@ -285,18 +321,60 @@ class PlanetInfo extends React.PureComponent {
   };
 
   handleCancelAuction = () => {
-    const { planet, dispatch } = this.props;
+    const { planet, dispatch, user } = this.props;
+    this.setState({
+      ...this.state,
+      isOperationComplete: false
+    });
     dispatch({
       type: 'planet/cancelAuction',
       payload: {
+        sender: user.account,
         auctionId: planet.auction.id,
         planetNo: planet.planetNo
       }
     })
       .then(() => {
+        this.setState({
+          ...this.state,
+          isOperationComplete: true
+        });
         notification.info({
           message: '成功！',
           description: '星星拍卖取消成功！'
+        });
+      });
+  };
+
+  handleBuy = () => {
+    const { planet, dispatch, user } = this.props;
+    const price = getCurrentPriceIntStr(planet.auction);
+    if (!price) {
+      return;
+    }
+
+    this.setState({
+      ...this.state,
+      isOperationComplete: false
+    });
+
+    dispatch({
+      type: 'planet/buy',
+      payload: {
+        sender: user.account,
+        auctionId: planet.auction.id,
+        planetNo: planet.planetNo,
+        price
+      }
+    })
+      .then(() => {
+        this.setState({
+          ...this.state,
+          isOperationComplete: true
+        });
+        notification.info({
+          message: '成功！',
+          description: '星星购买成功！'
         });
       });
   };
@@ -306,6 +384,8 @@ class PlanetInfo extends React.PureComponent {
     if (!planet) {
       return (<div style={{background: '#fff', padding: 24, minHeight: 380}} />);
     }
+
+    const { isOperationComplete } = this.state;
 
     let chineseNameComp = null;
     if (planet.chineseName) {
@@ -326,15 +406,25 @@ class PlanetInfo extends React.PureComponent {
       );
       if (user && user.accountStatus === ACCOUNT_STATUS.HAS_LOGIN) {
         if (user.account === planet.owner.walletAddr) {
-          operationComp = (
-            <Button type="danger" size="large" onClick={this.handleCancelAuction}>取消拍卖</Button>
-          );
+          if (isOperationComplete) {
+            operationComp = (
+              <Button type="danger" size="large" onClick={this.handleCancelAuction}>
+                取消拍卖
+              </Button>
+            );
+          } else {
+            operationComp = <Spin size="large" tip="拍卖取消中..."/>;
+          }
         } else {
-          operationComp = (
-            <Link to="/info">
-              <Button type="primary" size="large">购买星星</Button>
-            </Link>
-          );
+          if (isOperationComplete) {
+            operationComp = (
+              <Button type="danger" size="large" onClick={this.handleBuy}>
+                购买星星
+              </Button>
+            );
+          } else {
+            operationComp = <Spin size="large" tip="购买中..."/>;
+          }
         }
       }
 
@@ -342,10 +432,13 @@ class PlanetInfo extends React.PureComponent {
 
       auctionComp = (
         <div className={styles.auctionContainer}>
-          <Row gutter={32}>
+          <Row>
+            <strong style={{ fontSize: '1.5rem' }}>拍卖详情：</strong>
+          </Row>
+          <Row gutter={32} style={{ marginTop: '10px' }}>
             <Col span={6} style={{ fontSize: '1.2rem' }}>
               <strong>当前价格：</strong>
-              <img src={ethIcon} style={{ height: '24px' }} />
+              <img src={ethIcon} alt="" style={{ height: '24px' }} />
               {getCurrentPrice(planet.auction)} ETH
             </Col>
             {
@@ -366,20 +459,39 @@ class PlanetInfo extends React.PureComponent {
           <Row>
             <div style={{ float: 'left', fontSize: '1.2rem' }}>
               <strong>起步价：</strong>
-              <img src={ethIcon} style={{ height: '24px' }} />
-              {getPrice(auction.startPrice)} ETH
+              <img src={ethIcon} alt="" style={{ height: '24px' }} />
+              {getPriceStr(auction.startPrice)} ETH
             </div>
             <div style={{ float: 'right', fontSize: '1.2rem' }}>
               <strong>截止价：</strong>
-              <img src={ethIcon} style={{ height: '24px' }} />
-              {getPrice(auction.endPrice)} ETH
+              <img src={ethIcon} alt="" style={{ height: '24px' }} />
+              {getPriceStr(auction.endPrice)} ETH
             </div>
+          </Row>
+        </div>
+      );
+    } else if (user && user.accountStatus === ACCOUNT_STATUS.HAS_LOGIN && user.account === planet.owner.walletAddr) {
+      auctionComp = (
+        <div className={styles.auctionContainer}>
+          <Row gutter={32}>
+            <Col span={6} style={{ fontSize: '1.5rem' }}>
+              <strong>拍卖详情：</strong>无
+            </Col>
+            <Col span={6} offset={12} align="center">
+              {
+                isOperationComplete ? (
+                  <Button type="primary" size="large" onClick={() => {this.showModal('saleModal')}}>
+                    拍卖该星星
+                  </Button>
+                ) : <Spin size="large" tip="拍卖创建中..."/>
+              }
+            </Col>
           </Row>
         </div>
       );
     }
 
-    const { nameModal, introModal } = this.state;
+    const { nameModal, introModal, saleModal } = this.state;
     const basicInfoComp = (
       <div className={styles.infoContainer}>
         <div className={styles.headerContainer}>
@@ -421,7 +533,7 @@ class PlanetInfo extends React.PureComponent {
             </Col>
             <Col span={8}>
               <div align="right">
-                <img src={planet.img} style={{ width: '300px' }} />
+                <img src={planet.img} alt="" style={{ width: '300px' }} />
               </div>
             </Col>
           </Row>
@@ -457,7 +569,7 @@ class PlanetInfo extends React.PureComponent {
           visible={nameModal.visible}
           onOk={() => {this.handleOk('nameModal')}}
           confirmLoading={nameModal.confirmLoading}
-          onCancel={() => this.handleCancle('nameModal')}
+          onCancel={() => this.handleCancel('nameModal')}
           FormComp={PlanetNameForm}
           initialValue={{ customName: planet.customName || "" }}
         />
@@ -468,9 +580,18 @@ class PlanetInfo extends React.PureComponent {
           visible={introModal.visible}
           onOk={() => this.handleOk('introModal')}
           confirmLoading={introModal.confirmLoading}
-          onCancel={() => this.handleCancle('introModal')}
+          onCancel={() => this.handleCancel('introModal')}
           FormComp={PlanetIntroForm}
           initialValue={{ customIntro: planet.customIntro || "" }}
+        />
+        <ModalForm
+          getRef={(form) => this.saveFormRef('saleModal', form)}
+          title="创建拍卖"
+          visible={saleModal.visible}
+          onOk={() => this.handleOk('saleModal')}
+          confirmLoading={saleModal.confirmLoading}
+          onCancel={() => this.handleCancel('saleModal')}
+          FormComp={SaleModalFrom}
         />
       </div>
     );
